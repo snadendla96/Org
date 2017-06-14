@@ -1,0 +1,58 @@
+from simple_salesforce import Salesforce
+
+import json
+
+sf = Salesforce(username='', password=' ',security_token='', instance_url='https://org62.my.salesforce.com')
+print sf
+
+
+ss=Salesforce(username='',password='',security_token=' ',instance_url='https://na40.salesforce.com')
+print ss
+#result=sf.query_more("/services/data/v39.0/limits", True)
+#print result
+
+
+
+rs=sf.query("SELECT Name,DailyBandwidthLimit,DailyBandwidthUsed,DailyRequestTimeLimit,DailyRequestTimeUsed,MonthlyPageViewsEntitlement FROM Site Where Status = 'Active'")
+#print rs
+#print rs['records'][0]['Name']
+
+
+rs2=sf.query("SELECT count() FROM AsyncApexJob WHERE JobType = 'BatchApex' and status in ('Holding')")
+print (100-rs2['totalSize'])
+
+rs3=sf.query("SELECT count() FROM AsyncApexJob WHERE JobType = 'BatchApex' and status in ('Processing')")
+print (100-rs3['totalSize'])
+for i in rs['records']:
+     i['DailyBandwidthLimit'],i['DailyBandwidthUsed'],i['DailyRequestTimeLimit'],i['DailyRequestTimeUsed'],i['MonthlyPageViewsEntitlement']
+
+data=dict()
+data['SiteLimits-BandWidthLimit'] = dict()
+data['SiteLimits-BandWidthLimit']['Max'] = i['DailyBandwidthLimit']
+data['SiteLimits-BandWidthLimit']['Remaining'] =i['DailyBandwidthLimit']-i['DailyBandwidthUsed']
+#
+data['SiteLimits-ServiceRequestLimit'] = dict()
+data['SiteLimits-ServiceRequestLimit']['Max'] = i['DailyRequestTimeLimit']
+data['SiteLimits-ServiceRequestLimit']['Remaining'] =i['DailyRequestTimeLimit']-i['DailyRequestTimeUsed']
+#
+data['SiteLimits-MonthlyPageViewEntitlement'] = dict()
+data['SiteLimits-MonthlyPageViewEntitlement']['Max'] = 100
+data['SiteLimits-MonthlyPageViewEntitlement']['Remaining'] =i['MonthlyPageViewsEntitlement']-i['MonthlyPageViewsEntitlement']
+#
+data['MaximumNoofBatchJobsInFlexQueue'] = dict()
+data['MaximumNoofBatchJobsInFlexQueue']['Max'] =100
+data['MaximumNoofBatchJobsInFlexQueue']['Remaining'] =100-rs2['totalSize']
+#
+data['MaximumNoofBatchJobsInFlexQueue'] = dict()
+data['MaximumNoofBatchJobsInFlexQueue']['Max'] =100
+data['MaximumNoofBatchJobsInFlexQueue']['Remaining'] =100-rs3['totalSize']
+
+li=data
+#li=(json.dumps(data, indent=4, sort_keys=True))
+print li 
+
+
+
+payload =li
+apex = ss.apexecute('Limits', method='POST', data=payload)
+print apex
